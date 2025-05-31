@@ -1,0 +1,154 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>代码评审与测试报告</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                margin: 0;
+                padding: 20px;
+                color: #333;
+            }
+            .container {
+                max-width: 1000px;
+                margin: 0 auto;
+                background: #fff;
+                padding: 20px;
+                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            }
+            h1, h2, h3 {
+                color: #2c3e50;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 20px 0;
+            }
+            th, td {
+                padding: 12px 15px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+            }
+            th {
+                background-color: #f8f9fa;
+            }
+            .chart {
+                margin: 20px 0;
+                text-align: center;
+            }
+            .chart img {
+                max-width: 100%;
+                height: auto;
+            }
+            .summary {
+                background-color: #f8f9fa;
+                padding: 15px;
+                border-radius: 5px;
+                margin: 20px 0;
+            }
+            .good {
+                color: #28a745;
+            }
+            .warning {
+                color: #ffc107;
+            }
+            .danger {
+                color: #dc3545;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>代码评审与测试报告</h1>
+            <p>生成时间: 2025-05-31 19:30:11</p>
+            
+            <div class="summary">
+                <h2>总结</h2>
+                <p>
+                    代码质量评分: <span class="danger">0.0/10</span><br>
+                    代码问题总数: 0<br>
+                    测试通过率: <span class="danger">5/9 (55.6%)</span><br>
+                    覆盖率报告: 已生成
+                </p>
+            </div>
+            
+            <h2>代码评审结果</h2>
+            <table>
+                <tr>
+                    <th>工具</th>
+                    <th>问题数量</th>
+                    <th>评分</th>
+                </tr>
+                <tr>
+                    <td>Pylint</td>
+                    <td>0</td>
+                    <td>0.0/10</td>
+                </tr>
+                <tr>
+                    <td>Flake8</td>
+                    <td>0</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td>Bandit</td>
+                    <td>0</td>
+                    <td>-</td>
+                </tr>
+            </table>
+            
+            <div class="chart">
+                <h3>代码评审问题分布</h3>
+                <img src="charts/code_review_issues.png" alt="代码评审问题分布">
+            </div>
+            
+            <div class="chart">
+                <h3>Pylint代码质量评分</h3>
+                <img src="charts/pylint_score.png" alt="Pylint代码质量评分">
+            </div>
+            
+            <h2>测试结果</h2>
+            <table>
+                <tr>
+                    <th>测试类型</th>
+                    <th>通过数量</th>
+                    <th>总数</th>
+                    <th>通过率</th>
+                </tr>
+                <tr>
+                    <td>黑盒测试</td>
+                    <td>0</td>
+                    <td>5</td>
+                    <td>0.0%</td>
+                </tr>
+                <tr>
+                    <td>白盒测试</td>
+                    <td>0</td>
+                    <td>4</td>
+                    <td>0.0%</td>
+                </tr>
+                <tr>
+                    <td>总计</td>
+                    <td>5</td>
+                    <td>9</td>
+                    <td>55.6%</td>
+                </tr>
+            </table>
+            
+            <div class="chart">
+                <h3>测试通过率</h3>
+                <img src="charts/test_pass_rate.png" alt="测试通过率">
+            </div>
+            
+            <h2>建议</h2>
+            <ul>
+                <li>代码质量有待提高，建议解决Pylint和Flake8中的问题。</li>
+                <li>有测试未通过，需要修复相关问题。</li>
+                <li>代码中没有安全漏洞，继续保持。</li>
+            </ul>
+        </div>
+    </body>
+    </html>
+    

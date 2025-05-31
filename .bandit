@@ -1,0 +1,6 @@
+---
+exclude_dirs:
+  - test_*.py
+  - tests/
+skips:
+  - B311  # 随机数不用于安全/加密目的 

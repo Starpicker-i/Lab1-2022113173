@@ -1,0 +1,71 @@
+代码评审和测试日志
+开始时间: 2025-05-31 19:27:50
+================================================================================
+
+
+--------------------------------------------------------------------------------
+运行黑盒测试:
+--------------------------------------------------------------------------------
+命令: python -m pytest test_blackbox.py -v
+时间: 2025-05-31 19:27:50
+
+============================= test session starts =============================
+platform win32 -- Python 3.11.5, pytest-7.4.0, pluggy-1.0.0 -- D:\Anaconda\python.exe
+cachedir: .pytest_cache
+rootdir: D:\桌面\软件工程\msyLab3
+plugins: cov-4.1.0, anyio-3.5.0
+collecting ... collected 5 items
+
+test_blackbox.py::TestBlackBox::test_query_bridge_words PASSED           [ 20%]
+test_blackbox.py::TestBlackBox::test_generate_new_text PASSED            [ 40%]
+test_blackbox.py::TestBlackBox::test_calc_shortest_path PASSED           [ 60%]
+test_blackbox.py::TestBlackBox::test_random_walk PASSED                  [ 80%]
+test_blackbox.py::TestBlackBox::test_empty_graph PASSED                  [100%]
+
+============================== 5 passed in 0.22s ==============================
+
+--------------------------------------------------------------------------------
+运行白盒测试:
+--------------------------------------------------------------------------------
+命令: python -m pytest test_whitebox.py -v
+时间: 2025-05-31 19:27:52
+
+============================= test session starts =============================
+platform win32 -- Python 3.11.5, pytest-7.4.0, pluggy-1.0.0 -- D:\Anaconda\python.exe
+cachedir: .pytest_cache
+rootdir: D:\桌面\软件工程\msyLab3
+plugins: cov-4.1.0, anyio-3.5.0
+collecting ... collected 4 items
+
+test_whitebox.py::TestWhiteBox::test_query_bridge_words_paths PASSED     [ 25%]
+test_whitebox.py::TestWhiteBox::test_calc_shortest_path_paths PASSED     [ 50%]
+test_whitebox.py::TestWhiteBox::test_random_walk_paths PASSED            [ 75%]
+test_whitebox.py::TestWhiteBox::test_graph_structure PASSED              [100%]
+
+============================== 4 passed in 0.23s ==============================
+
+--------------------------------------------------------------------------------
+运行测试覆盖率分析:
+--------------------------------------------------------------------------------
+命令: python -m pytest --cov=directed_graph --cov=text_processor --cov=graph_analyzer --cov-report=html
+时间: 2025-05-31 19:27:53
+
+============================= test session starts =============================
+platform win32 -- Python 3.11.5, pytest-7.4.0, pluggy-1.0.0
+rootdir: D:\桌面\软件工程\msyLab3
+plugins: cov-4.1.0, anyio-3.5.0
+collected 9 items
+
+test_blackbox.py .....                                                   [ 55%]
+test_whitebox.py ....                                                    [100%]
+
+---------- coverage: platform win32, python 3.11.5-final-0 -----------
+Coverage HTML written to dir htmlcov
+
+
+============================== 9 passed in 0.44s ==============================
+
+
+================================================================================
+结束时间: 2025-05-31 19:27:54
+总体评估: 成功

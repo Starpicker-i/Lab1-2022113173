@@ -1,0 +1,34 @@
+[MASTER]
+# 最大行长度
+max-line-length=100
+
+# 最大模块行数
+max-module-lines=1500
+
+# 禁用一些警告
+disable=
+    C0111, # 缺少文档字符串
+    C0103, # 命名不符合规范
+    R0903, # 太少的公共方法
+    R0913, # 太多的参数
+    R0914, # 太多的局部变量
+
+[SIMILARITIES]
+# 最小相似行数
+min-similarity-lines=4
+
+[FORMAT]
+# 缩进字符数
+indent-string='    '
+
+[DESIGN]
+# 最大参数数量
+max-args=10
+# 最大属性数量
+max-attributes=15
+# 最大局部变量数量
+max-locals=25
+
+[IMPORTS]
+# 禁止通配符导入
+wildcard-import=no 
