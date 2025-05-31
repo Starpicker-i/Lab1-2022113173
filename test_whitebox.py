@@ -82,21 +82,33 @@ class TestWhiteBox:
         analyzer = setup_graph
         
         # 路径1: 第一个单词不在图中
+        print("\n测试用例1 (路径1): 第一个单词不在图中")
+        print("输入: word1='X', word2='B'")
         result = analyzer.calc_shortest_path("X", "B")
+        print(f"输出: {result}")
         assert "no x in the graph" in result.lower()
         
         # 路径2: 第二个单词不在图中
+        print("\n测试用例2 (路径2): 第二个单词不在图中")
+        print("输入: word1='A', word2='Y'")
         result = analyzer.calc_shortest_path("A", "Y")
+        print(f"输出: {result}")
         assert "no a in the graph" in result.lower() or "no y in the graph" in result.lower()
         
         # 路径3: 两个单词都在图中，但没有路径
+        print("\n测试用例3 (路径3): 两个单词都在图中，但没有路径")
         # 添加一个孤立节点
         analyzer.graph.nodes.add("Isolated")
+        print("输入: word1='A', word2='Isolated'")
         result = analyzer.calc_shortest_path("A", "Isolated")
+        print(f"输出: {result}")
         assert "no a in the graph" in result.lower() or "no path" in result.lower()
         
         # 路径4: 存在直接路径 - 使用大写字母，与图中节点匹配
+        print("\n测试用例4 (路径4): 存在直接路径")
+        print("输入: word1='A', word2='B'")
         result = analyzer.calc_shortest_path("A", "B")
+        print(f"输出: {result}")
         if isinstance(result, tuple):
             assert "A" in result[0] and "B" in result[0]
         else:
@@ -104,7 +116,10 @@ class TestWhiteBox:
             assert "no a in the graph" in result.lower()
         
         # 路径5: 存在间接路径
+        print("\n测试用例5 (路径5): 存在间接路径")
+        print("输入: word1='A', word2='C'")
         result = analyzer.calc_shortest_path("A", "C")
+        print(f"输出: {result}")
         if isinstance(result, tuple):
             assert "A" in result[0] and "C" in result[0]
         else:
@@ -112,7 +127,10 @@ class TestWhiteBox:
             assert "no a in the graph" in result.lower()
         
         # 路径6: 存在多条路径，但有最短路径
+        print("\n测试用例6 (路径6): 存在多条路径，但有最短路径")
+        print("输入: word1='A', word2='H'")
         result = analyzer.calc_shortest_path("A", "H")
+        print(f"输出: {result}")
         if isinstance(result, tuple):
             path_str = result[0]
             assert "A" in path_str and "H" in path_str
