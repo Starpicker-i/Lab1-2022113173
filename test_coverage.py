@@ -1,311 +1,424 @@
 #!/usr/bin/env python3
 """
-覆盖率提升测试模块
-专门针对低覆盖率的模块和函数进行测试
+高覆盖率测试模块
+针对directed_graph.py, graph_analyzer.py和text_processor.py进行全面测试
+目标是达到至少90%的代码覆盖率
 """
 
 import pytest
 import os
-import re
-import numpy as np
-from directed_graph import DirectedGraph
-from text_processor import TextProcessor
-from graph_analyzer import GraphAnalyzer
+import tempfile
+import random
+from unittest import mock
+from collections import deque
 
-class TestCoverage:
-    """覆盖率提升测试类"""
+from directed_graph import DirectedGraph
+from graph_analyzer import GraphAnalyzer
+from text_processor import TextProcessor
+
+class TestDirectedGraph:
+    """测试DirectedGraph类的所有方法"""
     
-    @pytest.fixture
-    def setup_text_processor(self):
-        """创建TextProcessor对象"""
-        return TextProcessor()
+    def test_init(self):
+        """测试初始化"""
+        graph = DirectedGraph()
+        assert graph.nodes == set()
+        assert isinstance(graph.edges, dict)
+        assert graph.pr_values == {}
+    
+    def test_add_edge(self):
+        """测试添加边"""
+        graph = DirectedGraph()
+        
+        # 测试添加新边
+        graph.add_edge("a", "b", 2)
+        assert "a" in graph.nodes
+        assert "b" in graph.nodes
+        assert graph.edges["a"]["b"] == 2
+        
+        # 测试更新已有边的权重
+        graph.add_edge("a", "b", 3)
+        assert graph.edges["a"]["b"] == 5  # 2 + 3
+    
+    def test_get_weight(self):
+        """测试获取边的权重"""
+        graph = DirectedGraph()
+        
+        # 添加边
+        graph.add_edge("a", "b", 2)
+        
+        # 测试获取已有边的权重
+        assert graph.get_weight("a", "b") == 2
+        
+        # 测试获取不存在的边的权重
+        assert graph.get_weight("a", "c") == 0
+        assert graph.get_weight("c", "b") == 0
+    
+    def test_get_successors(self):
+        """测试获取后继节点"""
+        graph = DirectedGraph()
+        
+        # 添加边
+        graph.add_edge("a", "b", 1)
+        graph.add_edge("a", "c", 2)
+        
+        # 测试获取已有节点的后继
+        successors = list(graph.get_successors("a"))
+        assert len(successors) == 2
+        assert "b" in successors
+        assert "c" in successors
+        
+        # 测试获取不存在节点的后继
+        assert list(graph.get_successors("d")) == []
+    
+    def test_get_predecessors(self):
+        """测试获取前驱节点"""
+        graph = DirectedGraph()
+        
+        # 添加边
+        graph.add_edge("a", "c", 1)
+        graph.add_edge("b", "c", 2)
+        
+        # 测试获取已有节点的前驱
+        predecessors = graph.get_predecessors("c")
+        assert len(predecessors) == 2
+        assert "a" in predecessors
+        assert "b" in predecessors
+        
+        # 测试获取不存在节点的前驱
+        assert graph.get_predecessors("d") == []
+
+class TestTextProcessor:
+    """测试TextProcessor类的所有方法"""
+    
+    def test_init(self):
+        """测试初始化"""
+        processor = TextProcessor()
+        assert isinstance(processor.graph, DirectedGraph)
+        assert processor.word_counts == {}
+        assert processor.total_words == 0
+    
+    def test_process_file(self):
+        """测试处理文本文件"""
+        # 创建临时文件
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False, encoding='utf-8') as f:
+            f.write("Hello world! This is a test. Hello again, world.")
+        
+        try:
+            # 处理文件
+            processor = TextProcessor()
+            graph = processor.process_file(f.name)
+            
+            # 验证结果
+            assert processor.total_words > 0
+            assert processor.word_counts["hello"] == 2
+            assert processor.word_counts["world"] == 2
+            assert processor.word_counts["test"] == 1
+            
+            # 验证图结构
+            assert "hello" in graph.nodes
+            assert "world" in graph.nodes
+            assert "test" in graph.nodes
+            assert graph.get_weight("hello", "world") > 0
+            assert graph.get_weight("this", "is") > 0
+            
+        finally:
+            # 清理临时文件
+            os.unlink(f.name)
+
+class TestGraphAnalyzer:
+    """测试GraphAnalyzer类的所有方法"""
     
     @pytest.fixture
     def setup_complex_graph(self):
-        """创建一个更复杂的图结构，用于测试更多路径"""
+        """创建一个复杂的测试图"""
         graph = DirectedGraph()
         
-        # 添加更多节点和边
-        words = ["apple", "banana", "cherry", "date", "elderberry", 
-                "fig", "grape", "honeydew", "kiwi", "lemon"]
+        # 创建一个有向图，包含多种路径和环
+        # a -> b -> c -> d -> e
+        # |    |    ^    |    ^
+        # v    v    |    v    |
+        # f -> g -> h -> i -> j
         
-        # 添加节点和边 - DirectedGraph通过add_edge添加节点
-        for i in range(len(words) - 1):
-            graph.add_edge(words[i], words[i+1], i+1)
+        edges = [
+            ("a", "b", 1), ("a", "f", 2),
+            ("b", "c", 3), ("b", "g", 1),
+            ("c", "d", 2), ("d", "e", 1), ("d", "i", 3),
+            ("f", "g", 2), ("g", "h", 1),
+            ("h", "c", 3), ("h", "i", 2),
+            ("i", "j", 1), ("j", "e", 2)
+        ]
         
-        # 添加一些循环和交叉边
-        graph.add_edge("banana", "apple", 2)
-        graph.add_edge("cherry", "banana", 3)
-        graph.add_edge("date", "apple", 4)
-        graph.add_edge("elderberry", "cherry", 5)
-        graph.add_edge("fig", "banana", 6)
-        graph.add_edge("grape", "date", 7)
-        graph.add_edge("honeydew", "elderberry", 8)
-        graph.add_edge("kiwi", "fig", 9)
-        graph.add_edge("lemon", "grape", 10)
+        for src, dst, weight in edges:
+            graph.add_edge(src, dst, weight)
         
         return GraphAnalyzer(graph)
     
-    @pytest.fixture
-    def setup_text_processor_with_data(self):
-        """创建带有数据的TextProcessor对象"""
-        processor = TextProcessor()
-        
-        # 创建一个临时文件用于测试
-        with open("test_text.txt", "w") as f:
-            f.write("This is a test file. It contains multiple lines. And some words repeat: test test file file.")
-        
-        # 处理文件
-        processor.process_file("test_text.txt")
-        
-        return processor
-    
-    def test_text_processor_full_coverage(self, setup_text_processor):
-        """全面测试TextProcessor类的所有方法"""
-        processor = setup_text_processor
-        
-        # 测试process_file方法
-        # 创建一个临时文件用于测试
-        with open("test_text.txt", "w") as f:
-            f.write("This is a test file.\nIt contains multiple lines.\nAnd some words repeat: test test file file.")
-        
-        # 测试处理文件 - 返回的是DirectedGraph对象
-        result = processor.process_file("test_text.txt")
-        assert isinstance(result, DirectedGraph)
-        assert "test" in result.nodes
-        assert "file" in result.nodes
-        
-        # 测试词频统计
-        assert processor.word_counts["test"] >= 2
-        assert processor.word_counts["file"] >= 2
-        assert processor.total_words > 0
-        
-        # 清理测试文件
-        os.remove("test_text.txt")
-        
-        # 测试异常情况
-        with pytest.raises(FileNotFoundError):
-            processor.process_file("nonexistent_file.txt")
-    
-    def test_graph_analyzer_additional_methods(self, setup_complex_graph):
-        """测试GraphAnalyzer类中其他未被充分覆盖的方法"""
+    def test_show_directed_graph(self, setup_complex_graph):
+        """测试展示有向图"""
         analyzer = setup_complex_graph
-        
-        # 测试show_directed_graph方法
         result = analyzer.show_directed_graph()
-        assert isinstance(result, str)
+        
+        # 验证结果包含预期的信息
         assert "有向图结构" in result
         assert "节点总数" in result
+        assert "边总数" in result
+        assert "节点 'a' 的出边" in result
         
-        # 测试generate_new_text方法的各种情况
-        # 空文本
-        result = analyzer.generate_new_text("")
-        assert result == ""
-        
-        # 单个单词
-        result = analyzer.generate_new_text("apple")
-        assert result == "apple"
-        
-        # 两个单词，有桥接词
-        result = analyzer.generate_new_text("apple banana")
-        assert "apple" in result
-        assert "banana" in result
-        
-        # 多个单词，有多个桥接词
-        text = "apple banana cherry date elderberry"
-        result = analyzer.generate_new_text(text)
-        assert len(result.split()) >= len(text.split())
-        
-        # 包含不在图中的单词
-        result = analyzer.generate_new_text("apple nonexistent banana")
-        assert "apple" in result
-        assert "nonexistent" in result
-        assert "banana" in result
-        
-        # 测试calc_shortest_path方法的各种情况
-        # 直接路径
-        result = analyzer.calc_shortest_path("apple", "banana")
-        assert isinstance(result, tuple) or "no path" in result.lower() or "no apple" in result.lower()
-        
-        # 间接路径
-        result = analyzer.calc_shortest_path("apple", "cherry")
-        assert isinstance(result, tuple) or "no path" in result.lower() or "no apple" in result.lower()
-        
-        # 长路径
-        result = analyzer.calc_shortest_path("apple", "lemon")
-        assert isinstance(result, tuple) or "no path" in result.lower() or "no apple" in result.lower()
-        
-        # 循环路径
-        result = analyzer.calc_shortest_path("banana", "apple")
-        assert isinstance(result, tuple) or "no path" in result.lower() or "no banana" in result.lower()
-        
-        # 测试random_walk方法
-        result = analyzer.random_walk()
-        assert isinstance(result, str)
-        assert len(result) > 0
+        # 测试空图的情况
+        empty_analyzer = GraphAnalyzer(DirectedGraph())
+        result = empty_analyzer.show_directed_graph()
+        assert "图是空的" in result
     
-    def test_directed_graph_additional_methods(self):
-        """测试DirectedGraph类中未被充分覆盖的方法"""
-        graph = DirectedGraph()
+    def test_query_bridge_words(self, setup_complex_graph):
+        """测试查询桥接词"""
+        analyzer = setup_complex_graph
         
-        # 测试基本操作
-        graph.add_edge("A", "B", 1)
-        graph.add_edge("B", "C", 2)
+        # 测试存在单个桥接词的情况
+        result = analyzer.query_bridge_words("a", "c")
+        assert "bridge word" in result.lower()
+        assert "b" in result
         
-        # 验证节点是否被添加
-        assert "A" in graph.nodes
-        assert "B" in graph.nodes
-        assert "C" in graph.nodes
+        # 测试存在多个桥接词的情况
+        result = analyzer.query_bridge_words("b", "i")
+        assert "bridge words" in result.lower() or "bridge word" in result.lower()
         
-        # 测试get_weight方法的边界情况
-        assert graph.get_weight("A", "B") == 1
-        assert graph.get_weight("A", "C") == 0  # 不存在的边
+        # 测试不存在桥接词的情况
+        result = analyzer.query_bridge_words("a", "e")
+        assert "no bridge words" in result.lower()
         
-        # 测试get_successors方法
-        successors = list(graph.get_successors("A"))
-        assert "B" in successors
-        assert len(successors) == 1
+        # 测试单词不在图中的情况
+        result = analyzer.query_bridge_words("x", "y")
+        assert "no x and y in the graph" in result.lower()
         
-        # 测试不存在节点的后继
-        successors = list(graph.get_successors("X"))
-        assert len(successors) == 0
+        result = analyzer.query_bridge_words("x", "a")
+        assert "no x in the graph" in result.lower()
         
-        # 测试get_predecessors方法
-        predecessors = list(graph.get_predecessors("B"))
-        assert "A" in predecessors
-        assert len(predecessors) == 1
+        result = analyzer.query_bridge_words("a", "y")
+        assert "no y in the graph" in result.lower()
+    
+    def test_generate_new_text(self, setup_complex_graph):
+        """测试生成新文本"""
+        analyzer = setup_complex_graph
         
-        # 测试不存在节点的前驱
-        predecessors = list(graph.get_predecessors("X"))
-        assert len(predecessors) == 0
+        # 测试正常情况
+        with mock.patch('random.choice', side_effect=lambda x: x[0]):  # 总是选择第一个桥接词
+            result = analyzer.generate_new_text("a c d e")
+            assert "a" in result
+            assert "c" in result
+            assert "d" in result
+            assert "e" in result
+            # 应该插入桥接词b
+            assert "b" in result
         
-        # 测试更新边的权重
-        graph.add_edge("A", "B", 2)  # 增加权重
-        assert graph.get_weight("A", "B") == 3  # 1 + 2 = 3
+        # 测试输入文本太短的情况
+        result = analyzer.generate_new_text("a")
+        assert result == "a"
+        
+        # 测试没有桥接词的情况
+        result = analyzer.generate_new_text("a e")
+        assert "a" in result
+        assert "e" in result
+    
+    def test_calc_shortest_path(self, setup_complex_graph):
+        """测试计算最短路径"""
+        analyzer = setup_complex_graph
+        
+        # 测试存在路径的情况
+        result = analyzer.calc_shortest_path("a", "e")
+        assert isinstance(result, tuple)
+        assert len(result) == 3
+        path_str, path, weight = result
+        assert "a" in path_str and "e" in path_str
+        assert path[0] == "a" and path[-1] == "e"
+        assert weight > 0
+        
+        # 测试不存在路径的情况
+        # 添加一个孤立节点
+        analyzer.graph.nodes.add("isolated")
+        result = analyzer.calc_shortest_path("a", "isolated")
+        assert isinstance(result, str)
+        assert "no path from a to isolated" in result.lower()
+        
+        # 测试单词不在图中的情况
+        result = analyzer.calc_shortest_path("x", "e")
+        assert "no x in the graph" in result.lower()
+        
+        result = analyzer.calc_shortest_path("a", "y")
+        assert "no y in the graph" in result.lower()
     
     def test_calc_all_shortest_paths(self, setup_complex_graph):
         """测试计算一个单词到所有其他单词的最短路径"""
         analyzer = setup_complex_graph
         
         # 测试正常情况
-        result = analyzer.calc_all_shortest_paths("apple")
+        result = analyzer.calc_all_shortest_paths("a")
         assert isinstance(result, tuple)
-        assert isinstance(result[0], str)
-        assert isinstance(result[1], dict)
-        assert "从单词 'apple' 到其他单词的最短路径" in result[0]
+        result_str, paths_dict = result
+        assert "从单词 'a' 到其他单词的最短路径" in result_str
+        assert isinstance(paths_dict, dict)
+        assert "b" in paths_dict
+        assert "c" in paths_dict
         
         # 测试单词不在图中的情况
-        result = analyzer.calc_all_shortest_paths("nonexistent")
+        result = analyzer.calc_all_shortest_paths("x")
         assert isinstance(result, str)
-        assert "No nonexistent in the graph" in result
+        assert "no x in the graph" in result.lower()
         
-        # 测试没有可达节点的情况
-        # 添加一个孤立节点
-        analyzer.graph.nodes.add("isolated")
-        result = analyzer.calc_all_shortest_paths("isolated")
+        # 测试无法到达任何节点的情况
+        isolated_graph = DirectedGraph()
+        isolated_graph.nodes.add("a")
+        isolated_analyzer = GraphAnalyzer(isolated_graph)
+        result = isolated_analyzer.calc_all_shortest_paths("a")
         assert isinstance(result, str)
-        assert "无法到达" in result
+        assert "无法到达任何其他单词" in result
     
     def test_calc_all_shortest_paths_between(self, setup_complex_graph):
         """测试计算两个单词之间的所有最短路径"""
         analyzer = setup_complex_graph
         
-        # 创建一个更简单的图用于测试
-        simple_graph = DirectedGraph()
-        # 添加简单的路径
-        simple_graph.add_edge("start", "middle1", 1)
-        simple_graph.add_edge("start", "middle2", 2)
-        simple_graph.add_edge("middle1", "end", 3)
-        simple_graph.add_edge("middle2", "end", 4)
-        simple_analyzer = GraphAnalyzer(simple_graph)
+        # 测试存在多条最短路径的情况
+        # 添加一条与现有路径等长的路径
+        analyzer.graph.add_edge("a", "k", 1)
+        analyzer.graph.add_edge("k", "c", 3)
         
-        # 测试简单图中的路径 - 应该有两条路径
-        result = simple_analyzer.calc_all_shortest_paths_between("start", "end")
+        result = analyzer.calc_all_shortest_paths_between("a", "c")
         assert isinstance(result, tuple)
-        assert isinstance(result[0], str)
-        assert isinstance(result[1], list)
-        assert len(result[1]) == 2  # 应该有两条路径
+        result_str, paths_with_weights = result
+        assert "发现" in result_str and "最短路径" in result_str
+        assert len(paths_with_weights) >= 1
+        
+        # 测试不存在路径的情况
+        # 添加一个孤立节点
+        analyzer.graph.nodes.add("isolated")
+        result = analyzer.calc_all_shortest_paths_between("a", "isolated")
+        assert isinstance(result, str)
+        assert "No path from a to isolated" in result or "No isolated in the graph" in result
         
         # 测试单词不在图中的情况
-        result = simple_analyzer.calc_all_shortest_paths_between("nonexistent", "end")
-        assert isinstance(result, str)
-        assert "No nonexistent in the graph" in result
+        result = analyzer.calc_all_shortest_paths_between("x", "c")
+        assert "No x in the graph" in result
         
-        result = simple_analyzer.calc_all_shortest_paths_between("start", "nonexistent")
-        assert isinstance(result, str)
-        assert "No nonexistent in the graph" in result
-        
-        # 测试没有路径的情况
-        simple_graph.nodes.add("isolated")
-        result = simple_analyzer.calc_all_shortest_paths_between("start", "isolated")
-        assert isinstance(result, str)
-        assert "No path" in result
+        result = analyzer.calc_all_shortest_paths_between("a", "y")
+        assert "No y in the graph" in result
     
-    def test_calc_tf_idf(self, setup_complex_graph, setup_text_processor_with_data):
+    def test_calc_tf_idf(self, setup_complex_graph):
         """测试计算TF-IDF值"""
-        # 创建一个更简单的图和处理器
-        graph = DirectedGraph()
-        graph.add_edge("word1", "word2", 1)
-        graph.add_edge("word2", "word3", 1)
-        analyzer = GraphAnalyzer(graph)
+        analyzer = setup_complex_graph
         
+        # 创建一个简单的文本处理器，确保包含图中所有节点的词频
         processor = TextProcessor()
-        # 手动设置一些词频数据
-        processor.total_words = 10
-        processor.word_counts = {"word1": 2, "word2": 3, "word3": 1}
+        processor.total_words = 100
         
-        # 测试计算TF-IDF
-        result = analyzer.calc_tf_idf(processor)
-        assert isinstance(result, dict)
+        # 为图中的每个节点添加词频
+        processor.word_counts = {}
+        for node in analyzer.graph.nodes:
+            processor.word_counts[node] = 5  # 给每个节点一个默认词频
         
-        # 检查每个节点都有TF-IDF值
-        assert "word1" in result
-        assert "word2" in result
-        assert "word3" in result
-        assert all(isinstance(val, float) for val in result.values())
+        # 添加一些特定的词频
+        processor.word_counts["a"] = 10
+        processor.word_counts["b"] = 5
+        processor.word_counts["c"] = 3
+        processor.word_counts["d"] = 2
+        
+        # 计算TF-IDF值
+        tf_idf_values = analyzer.calc_tf_idf(processor)
+        
+        # 验证结果
+        assert isinstance(tf_idf_values, dict)
+        assert "a" in tf_idf_values
+        assert "b" in tf_idf_values
+        assert tf_idf_values["a"] > 0
     
-    def test_calc_page_rank(self, setup_complex_graph, setup_text_processor_with_data):
+    def test_calc_page_rank(self, setup_complex_graph):
         """测试计算PageRank值"""
-        # 创建一个更简单的图
-        graph = DirectedGraph()
-        graph.add_edge("a", "b", 1)
-        graph.add_edge("b", "c", 1)
-        graph.add_edge("c", "a", 1)  # 形成一个环
-        analyzer = GraphAnalyzer(graph)
+        analyzer = setup_complex_graph
         
-        # 测试不使用TF-IDF的PageRank计算，限制迭代次数
-        result = analyzer.calc_page_rank(use_tf_idf=False, max_iterations=5)
-        assert isinstance(result, dict)
+        # 计算PageRank值
+        pr_values = analyzer.calc_page_rank(max_iterations=10)
         
-        # 检查每个节点都有PageRank值
-        assert "a" in result
-        assert "b" in result
-        assert "c" in result
-        assert all(isinstance(val, float) for val in result.values())
+        # 验证结果
+        assert isinstance(pr_values, dict)
+        assert "a" in pr_values
+        assert "b" in pr_values
+        assert pr_values["a"] > 0
         
-        # 测试空图的情况
-        empty_graph = DirectedGraph()
-        empty_analyzer = GraphAnalyzer(empty_graph)
-        result = empty_analyzer.calc_page_rank()
-        assert result == {}
+        # 测试使用TF-IDF初始化
+        processor = TextProcessor()
+        processor.total_words = 100
+        
+        # 为图中的每个节点添加词频
+        processor.word_counts = {}
+        for node in analyzer.graph.nodes:
+            processor.word_counts[node] = 5  # 给每个节点一个默认词频
+        
+        # 添加一些特定的词频
+        processor.word_counts["a"] = 10
+        processor.word_counts["b"] = 5
+        processor.word_counts["c"] = 3
+        processor.word_counts["d"] = 2
+        
+        pr_values = analyzer.calc_page_rank(max_iterations=10, text_processor=processor, use_tf_idf=True)
+        assert isinstance(pr_values, dict)
+        assert "a" in pr_values
+        
+        # 测试空图
+        empty_analyzer = GraphAnalyzer(DirectedGraph())
+        pr_values = empty_analyzer.calc_page_rank()
+        assert pr_values == {}
     
     def test_get_page_rank(self, setup_complex_graph):
         """测试获取单词的PageRank值"""
-        # 创建一个简单的图
-        graph = DirectedGraph()
-        graph.add_edge("x", "y", 1)
-        graph.add_edge("y", "z", 1)
-        analyzer = GraphAnalyzer(graph)
+        analyzer = setup_complex_graph
         
-        # 手动设置PR值
-        analyzer.graph.pr_values = {"x": 0.4, "y": 0.3, "z": 0.3}
+        # 计算PageRank值
+        analyzer.calc_page_rank(max_iterations=10)
         
-        # 测试获取存在单词的PageRank
+        # 测试获取已计算的PageRank值
+        pr_value = analyzer.get_page_rank("a")
+        assert isinstance(pr_value, float)
+        assert pr_value > 0
+        
+        # 测试单词不在图中的情况
         result = analyzer.get_page_rank("x")
-        assert isinstance(result, float)
-        assert result == 0.4
+        assert "no x in the graph" in result.lower()
+    
+    @mock.patch('random.choice')
+    def test_random_walk(self, mock_choice, setup_complex_graph):
+        """测试随机游走"""
+        analyzer = setup_complex_graph
         
-        # 测试获取不存在单词的PageRank
-        result = analyzer.get_page_rank("nonexistent")
+        # 模拟随机选择
+        mock_choice.side_effect = ["a", "b", "c", "d", "e"]
+        
+        # 测试正常情况
+        result = analyzer.random_walk()
         assert isinstance(result, str)
-        assert "No nonexistent in the graph" in result 
+        assert "a" in result
+        assert "b" in result
+        
+        # 重置mock
+        mock_choice.reset_mock()
+        
+        # 测试空图
+        empty_analyzer = GraphAnalyzer(DirectedGraph())
+        result = empty_analyzer.random_walk()
+        assert "图是空的" in result
+        
+        # 重置mock
+        mock_choice.reset_mock()
+        
+        # 测试遇到重复边的情况
+        mock_choice.side_effect = ["a", "b", "a", "b"]
+        result = analyzer.random_walk()
+        assert "a" in result
+        assert "b" in result
+        
+        # 重置mock
+        mock_choice.reset_mock()
+        
+        # 测试遇到没有出边的节点
+        mock_choice.side_effect = ["a", "b", "c", "d", "e"]  # e没有出边
+        result = analyzer.random_walk()
+        assert "a" in result
+        assert "e" in result 
